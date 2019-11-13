@@ -1,0 +1,16 @@
+{% extends 'chat/base.html' %}
+{% block content %}
+    {% if request.user.is_authenticated %}
+        Whom  you wanna chat with<br/>
+
+        <!-- user list here -->
+
+        {% for user in users %}
+            {% if user.username != request.user.username %}
+            <a href="{% url 'chat-room-view' room_name=user.username %}">
+                {{user.username}}
+            </a><br>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endblock %}

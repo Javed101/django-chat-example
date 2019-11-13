@@ -1,0 +1,16 @@
+{% extends 'chat/base.html' %}
+
+{% block header %}
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+            {% csrf_token %}
+            <input id="username" type="text" name="username"/><br/>
+            <input id="password" type="password" name="password"/><br>
+            {% if error %}
+                <span style="color: red">{{error}}</span><br>
+            {% endif %}
+            <input id="submit" type="submit" value="Submit"/>
+    </form>
+{% endblock %}

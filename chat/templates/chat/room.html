@@ -1,0 +1,94 @@
+
+<!-- chat/templates/chat/room.html -->
+{% extends 'chat/base.html' %}
+{% block content %}
+
+Chat: {{request.user.username}} and {{chat_with}}<br>
+
+<hr>
+{% with user_name=request.user.username %}     
+<div id="chat-log" style="max-height:400px; overflow: scroll">
+    
+    {% for m in messages %}
+        <div class="container" style="text-align:{%if m.sender.username != user_name %}left{% else %}right{%endif%}">
+            <p>{{m.sender.username}}</p>
+            <p>{{m.message}}</p>
+            <span class="time-left"> {{m.msg_time}} </span>
+        </div> <hr> 
+    {% endfor %}
+</div>
+{% endwith %}
+
+<input id="chat-message-input" type="text" size="100"/><br/>
+<input id="chat-message-submit" type="button" value="Send"/>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+        $(document).ready(function()
+        {
+            var ht =  $('#chat-log').prop('scrollHeight');
+            $('#chat-log').scrollTop(ht);
+        });
+
+        var roomName = {{ room_name_json }};
+        var sender = {{ sender }};
+        var receiver = {{ receiver }};
+    
+        var chatSocket = new WebSocket(
+            'ws://' + window.location.host +
+            '/ws/chat/?group_name='+roomName);
+
+        chatSocket.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            var message = data['message'];
+            var text_align = 'right';
+            console.log('receive:');
+            console.log(message);
+            if (sender.username != message.sender.username){
+                text_align = 'left';
+            }
+            var message_html = $('<div class="container" style="text-align: '+text_align+'">\
+                                    <p>'+ message.sender.username +'</p>\
+                                    <p>'+ message.message +'</p>\
+                                    <span class="time-left">'+ message.msg_time +'</span>\
+                                </div> <hr> ');
+            $('#chat-log').append(message_html)
+            
+            
+            // scroll to latest msg
+            var height = 0;
+            $('#chat-log div.container').each(function(i, value){
+                height += parseInt($(this).height());
+            });
+            height += '';
+            $('#chat-log').scrollTop(height);
+
+        };
+    
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+    
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+    
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            var messageInputDom = document.querySelector('#chat-message-input');
+            var message = messageInputDom.value;
+            
+            chatSocket.send(JSON.stringify({
+                'message': {
+                    'message': message,
+                    'sender': sender,
+                    "receiver": receiver
+                }
+            }));
+            messageInputDom.value = '';
+        };
+    </script>    
+{% endblock %}
